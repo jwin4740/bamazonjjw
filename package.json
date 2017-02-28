@@ -1,0 +1,31 @@
+{
+  "name": "bamazonjjw",
+  "version": "1.0.0",
+  "description": "mock amazon environment with mysql and node",
+  "main": "bamazoncustomer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jwin4740/bamazonjjw.git"
+  },
+  "keywords": [
+    "store",
+    "sales",
+    "products",
+    "price",
+    "mysql",
+    "node"
+  ],
+  "author": "James J Winkle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jwin4740/bamazonjjw/issues"
+  },
+  "homepage": "https://github.com/jwin4740/bamazonjjw#readme",
+  "dependencies": {
+    "inquirer": "^3.0.5",
+    "mysql": "^2.13.0"
+  }
+}
