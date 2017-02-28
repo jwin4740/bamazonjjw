@@ -1,6 +1,7 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 var moment = require("moment");
+var $ = require("jquery");
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -23,43 +24,49 @@ var connection = mysql.createConnection({
 
 var currentUser;
 var password;
-inquirer.prompt({
-    name: "usertype",
-    type: "list",
-    message: "Are you a new user or returning user",
-    choices: ["newuser", "returninguser"]
-}).then(function(answer) {
-    if (answer.usertype === "newuser") {
-        createNewUser();
-    } else {
-        inquirer.prompt([{
-            name: "user",
-            type: "input",
-            message: "USERNAME:"
-        }, {
-            name: "pass",
-            type: "password",
-            message: "PASSWORD (case sensitive):"
-        }]).then(function(answer) {
-            currentUser = answer.user;
-            password = answer.pass;
-            console.log(currentUser + "\n" + password);
-            connection.query("INSERT INTO useraccounts SET ?", {
-                username: currentUser,
-                password: password,
-                last_login: moment()
-            }, function(err, res) {
-                if (err) throw err;
-                console.log(res);
+// var tester = $(jquery.isEmptyObject({}));
+// console.log(tester);
+var start = function() {
+    inquirer.prompt({
+        name: "usertype",
+        type: "list",
+        message: "Are you a new user or returning user",
+        choices: ["newuser", "returninguser"]
+    }).then(function(answer) {
+        if (answer.usertype === "newuser") {
+            createNewUser();
+        } else {
+            inquirer.prompt([{
+                name: "user",
+                type: "input",
+                message: "USERNAME:"
+            }, {
+                name: "pass",
+                type: "password",
+                message: "PASSWORD (case sensitive):"
+            }]).then(function(answer) {
+                currentUser = answer.user;
+                password = answer.pass;
+                verifyReturningUser();
             });
+        }
+    });
+}
+start();
 
+function verifyReturningUser() {
+    connection.query("SELECT username, password FROM useraccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
+        if (err) throw err;
+        if (res == "") {
+            console.log("\nINVALID USERNAME/PASSWORD COMBINATION\n");
+            setTimeout(start, 1500);
+        } else {
+            console.log("\nverifying...");
+            setTimeout(function() { console.log("\n WELCOME TO BAMAZON " + currentUser) }, 2000);
+        }
+    });
 
-
-        })
-    }
-
-
-});
+}
 
 function createNewUser() {
     inquirer.prompt([{
