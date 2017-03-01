@@ -8,6 +8,7 @@ var $ = require("jquery");
 var currentUser;
 var password;
 var productsArray = [];
+var productsIdArray = [];
 
 
 // creates connection to mysql
@@ -35,9 +36,9 @@ var start = function() {
         name: "usertype",
         type: "list",
         message: "Are you a new user or returning user",
-        choices: ["newuser", "returninguser"]
+        choices: ["NEW USER", "RETURNING USER"]
     }).then(function(answer) {
-        if (answer.usertype === "newuser") {
+        if (answer.usertype === "NEW USER") {
             createNewUser();
         } else {
             inquirer.prompt([{
@@ -140,8 +141,38 @@ function shopping() {
             var n = res.length;
             for (var i = 0; i < n; i++) {
                 var productObj = new Product(res[i].id, res[i].product, res[i].product_description, res[i].department, res[i].price, res[i].quantity);
-            	productsArray.push(productObj);
+                productsArray.push(productObj);
+                productsIdArray.push(i + 1);
             }
-            console.log(productsArray);
+
         });
+    inquirer.prompt({
+        name: "mainmenu",
+        type: "list",
+        message: "MAIN MENU:",
+        choices: ["CHECK ACCOUNT BALANCE", "VIEW PURCHASE HISTORY", "SHOP", "ADD MONEY TO ACCOUNT"]
+    }).then(function(answer) {
+        console.log(answer.mainmenu);
+        switch (answer.mainmenu) {
+            case "CHECK ACCOUNT BALANCE":
+                console.log("hello");
+                break;
+            case "VIEW PURCHASE HISTORY":
+                console.log("hello");
+                afsadf
+                break;
+            case "SHOP":
+                browse();
+                break;
+            case "ADD MONEY TO ACCOUNT":
+                console.log("hello");
+                break;
+        }
+    });
+}
+
+function browse () {
+	console.log(productsArray);
+	
+
 }
