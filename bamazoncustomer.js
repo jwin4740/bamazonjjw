@@ -1,8 +1,16 @@
+// NPM dependencies
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 var moment = require("moment");
 var $ = require("jquery");
 
+// global variables
+var currentUser;
+var password;
+var productsArray = [];
+
+
+// creates connection to mysql
 var connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
@@ -11,21 +19,17 @@ var connection = mysql.createConnection({
 
 });
 
-// connection.connect(function(err) {
-//     if (err) throw err;
-//     console.log("connected as id" + connection.threadId);
-// });
+// constructor function for products
+function Product(id, product, product_description, department, price, quantity) {
+    this.id = id;
+    this.product = product;
+    this.product_description = product_description;
+    this.department = department;
+    this.price = price;
+    this.quantity = quantity;
+}
 
-// // select entire table
-// connection.query("SELECT * FROM products", function (err, res){
-// 	if(err) throw err;
-// 	console.log(res);
-// });
 
-var currentUser;
-var password;
-// var tester = $(jquery.isEmptyObject({}));
-// console.log(tester);
 var start = function() {
     inquirer.prompt({
         name: "usertype",
@@ -62,12 +66,14 @@ function verifyReturningUser() {
             setTimeout(start, 1500);
         } else {
             console.log("\nverifying...");
-            setTimeout(function() { console.log("\n\n\n\n WELCOME TO BAMAZON " + currentUser) }, 2000);
+            setTimeout(function() { console.log("\n\n WELCOME TO BAMAZON " + currentUser) }, 2000);
+            setTimeout(shopping, 3000);
         }
         connection.query("UPDATE bamazon.useraccounts SET last_login='" + moment().format('llll') + "' WHERE username='" + currentUser + "';", function(err, res) {
             if (err) throw err;
 
         });
+
     });
 
 }
@@ -99,7 +105,7 @@ function createNewUser() {
 }
 
 function newUserConfirmed() {
-	setTimeout(function() { console.log("\nYOUR ACCOUNT HAS BEEN SUCCESSFULLY CREATED\n\n\n\n WELCOME TO BAMAZON " + currentUser); }, 1000);
+    setTimeout(function() { console.log("\nYOUR ACCOUNT HAS BEEN SUCCESSFULLY CREATED\n\n WELCOME TO BAMAZON " + currentUser); }, 1000);
 
     connection.query("INSERT INTO bamazon.useraccounts SET ?", {
         username: currentUser,
@@ -120,9 +126,22 @@ function newUserConfirmed() {
     connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
         account_balance: 1000,
         purchase: "iphone",
-        purchase_date: "today",
+        purchase_date: moment.format('LL'),
         cost: 250
     }, function(err, res) {
         if (err) throw err;
     });
+}
+
+function shopping() {
+    connection.query("SELECT * FROM bamazon.products;",
+        function(err, res) {
+            if (err) throw err;
+            var n = res.length;
+            for (var i = 0; i < n; i++) {
+                var productObj = new Product(res[i].id, res[i].product, res[i].product_description, res[i].department, res[i].price, res[i].quantity);
+            	productsArray.push(productObj);
+            }
+            console.log(productsArray);
+        });
 }
