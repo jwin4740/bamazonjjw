@@ -9,6 +9,9 @@ var currentUser;
 var password;
 var productsArray = [];
 var productsIdArray = [];
+var shoppingCartArray = [];
+var cost = 0;
+var totalOrderCost = 0;
 
 
 // creates connection to mysql
@@ -26,6 +29,12 @@ function Product(id, product, product_description, department, price, quantity) 
     this.product = product;
     this.product_description = product_description;
     this.department = department;
+    this.price = price;
+    this.quantity = quantity;
+}
+
+function CartItem(product, price, quantity) {
+    this.product = product;
     this.price = price;
     this.quantity = quantity;
 }
@@ -68,9 +77,9 @@ function verifyReturningUser() {
         } else {
             console.log("\nverifying...");
             setTimeout(function() { console.log("\n\n WELCOME TO BAMAZON " + currentUser) }, 2000);
-            setTimeout(shopping, 3000);
+            setTimeout(mainMenu, 3000);
         }
-        connection.query("UPDATE bamazon.useraccounts SET last_login='" + moment().format('llll') + "' WHERE username='" + currentUser + "';", function(err, res) {
+        connection.query("UPDATE bamazon.useraccounts SET last_login='" + moment().format('MMMM Do YYYY, h:mm:ss a') + "' WHERE username='" + currentUser + "';", function(err, res) {
             if (err) throw err;
 
         });
@@ -93,14 +102,19 @@ function createNewUser() {
         type: "password",
         message: "CONFIRM PASSWORD:"
     }]).then(function(answer) {
-
-        if (answer.pass === answer.passconfirm) {
-            currentUser = answer.user;
-            password = answer.pass;
-            newUserConfirmed();
-        } else {
+        currentUser = answer.user;
+        password = answer.pass;
+        if (password != answer.passconfirm) {
             console.log("\nPASSWORDS DO NOT MATCH, TRY AGAIN\n");
             setTimeout(createNewUser, 1000);
+        } else if (password.includes(";") || password.includes(")")) {
+            console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
+            setTimeout(createNewUser, 1000);
+        } else if (password.length > 12) {
+            console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHAARCTERS, TRY AGAIN\n");
+            setTimeout(createNewUser, 1000);
+        } else {
+            newUserConfirmed();
         }
     })
 }
@@ -112,7 +126,7 @@ function newUserConfirmed() {
         username: currentUser,
         password: password,
         account_created: moment(),
-        last_login: moment().format('llll')
+        last_login: moment().format('MMMM Do YYYY, h:mm:ss a')
     }, function(err, res) {
         if (err) throw err;
 
@@ -127,14 +141,14 @@ function newUserConfirmed() {
     connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
         account_balance: 1000,
         purchase: "iphone",
-        purchase_date: moment.format('LL'),
+        purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
         cost: 250
     }, function(err, res) {
         if (err) throw err;
     });
 }
 
-function shopping() {
+function mainMenu() {
     connection.query("SELECT * FROM bamazon.products;",
         function(err, res) {
             if (err) throw err;
@@ -171,8 +185,53 @@ function shopping() {
     });
 }
 
-function browse () {
-	console.log(productsArray);
-	
+function browse() {
+    var n = productsArray.length;
+    console.log(
+        ` ID      PRODUCT      PRICE     DEPARTMENT     QUANTITY
+----------------------------------------------------------------------- `
+    );
+    for (var i = 0; i < n; i++) {
+        console.log(
+            ` ${productsArray[i].id}    ${productsArray[i].product}      ${productsArray[i].price}         ${productsArray[i].department}          ${productsArray[i].quantity} \n\n`
+        );
+
+    }
+    inquirer.prompt([{
+        name: "shopping",
+        type: "input",
+        message: "INPUT THE ID OF THE PRODUCT YOU WISH TO PURCHASE"
+    }, {
+        name: "quantity",
+        type: "input",
+        message: "ENTER YOUR DESIRED QUANTITY",
+    }]).then(function(answer) {
+        var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity));
+        shoppingCartArray.push(cartObj);
+        console.log(shoppingCartArray);
+
+
+    });
+}
+
+function displayShoppingCart () {
+      console.log(
+        `  PRODUCT      PRICE       QUANTITY          TOTAL
+----------------------------------------------------------------------- `
+    );
+      var n = shoppingCartArray.length;
+       for (var i = 0; i < n; i++) {
+        console.log(
+            ` ${shoppingCartArray[i].product}    ${shoppingCartArray[i].price}      ${shoppingCartArray[i].quantity}     ${cost} \n\n`
+        );
+
+    }
+
+        console.log(
+        `                                           
+-----------------------------------------------------------------------
+                                                        TOTAL ORDER `
+    );
+
 
 }
