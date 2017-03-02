@@ -33,10 +33,11 @@ function Product(id, product, product_description, department, price, quantity) 
     this.quantity = quantity;
 }
 
-function CartItem(product, price, quantity) {
+function CartItem(product, price, quantity, cost) {
     this.product = product;
     this.price = price;
     this.quantity = quantity;
+    this.cost = cost;
 }
 
 
@@ -120,7 +121,7 @@ function createNewUser() {
 }
 
 function newUserConfirmed() {
-    setTimeout(function() { console.log("\nYOUR ACCOUNT HAS BEEN SUCCESSFULLY CREATED\n\n WELCOME TO BAMAZON " + currentUser); }, 1000);
+    setTimeout(function() { console.log("\nYOUR ACCOUNT HAS BEEN SUCCESSFULLY CREATED\n\n WELCOME TO BAMAZON " + currentUser); mainMenu(); }, 1000);
 
     connection.query("INSERT INTO bamazon.useraccounts SET ?", {
         username: currentUser,
@@ -132,7 +133,7 @@ function newUserConfirmed() {
 
     });
 
-    connection.query("CREATE TABLE bamazon_user_management." + currentUser + " (id INTEGER(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, account_balance DECIMAL(8, 2), purchase VARCHAR(100), purchase_date VARCHAR(100), cost DECIMAL(8, 2));",
+    connection.query("CREATE TABLE bamazon_user_management." + currentUser + " (id INTEGER(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, account_balance DECIMAL(8, 2), purchase VARCHAR(100), quantity INTEGER(5), purchase_date VARCHAR(100), cost DECIMAL(8, 2));",
         function(err, res) {
             if (err) throw err;
 
@@ -141,11 +142,13 @@ function newUserConfirmed() {
     connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
         account_balance: 1000,
         purchase: "iphone",
+        quantity: 1,
         purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
         cost: 250
     }, function(err, res) {
         if (err) throw err;
     });
+
 }
 
 function mainMenu() {
@@ -206,32 +209,45 @@ function browse() {
         type: "input",
         message: "ENTER YOUR DESIRED QUANTITY",
     }]).then(function(answer) {
-        var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity));
+        cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity);
+        var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity));
         shoppingCartArray.push(cartObj);
-        console.log(shoppingCartArray);
+
+        displayShoppingCart();
 
 
     });
 }
 
-function displayShoppingCart () {
-      console.log(
-        `  PRODUCT      PRICE       QUANTITY          TOTAL
------------------------------------------------------------------------ `
-    );
-      var n = shoppingCartArray.length;
-       for (var i = 0; i < n; i++) {
-        console.log(
-            ` ${shoppingCartArray[i].product}    ${shoppingCartArray[i].price}      ${shoppingCartArray[i].quantity}     ${cost} \n\n`
-        );
+function displayShoppingCart() {
 
-    }
+    inquirer.prompt({
+        name: "shop",
+        type: "confirm",
+        message: "Would you like to continue shopping?"
+    }).then(function(answer) {
+        if (answer.shop) {
+            browse();
+        } else {
+            console.log(
+                `\n\n    PRODUCT                       PRICE    QUANTITY        TOTAL
+--------------------------------------------------------------------------------------- `
+            );
+            var n = shoppingCartArray.length;
+            for (var i = 0; i < n; i++) {
+                totalOrderCost += shoppingCartArray[i].cost;
+                console.log(
+                    ` \n  ${shoppingCartArray[i].product}             $${shoppingCartArray[i].price}      ${shoppingCartArray[i].quantity}          $${shoppingCartArray[i].cost}`
+                );
 
-        console.log(
-        `                                           
------------------------------------------------------------------------
-                                                        TOTAL ORDER `
-    );
+            }
 
+            console.log(
+                `\n                                           
+---------------------------------------------------------------------------------------
+                                       TOTAL ORDER COST:  $${totalOrderCost} `
+            );
 
+        }
+    });
 }
