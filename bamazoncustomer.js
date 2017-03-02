@@ -12,7 +12,7 @@ var productsIdArray = [];
 var shoppingCartArray = [];
 var cost = 0;
 var totalOrderCost = 0;
-
+var accountBalance = 0;
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -33,11 +33,12 @@ function Product(id, product, product_description, department, price, quantity) 
     this.quantity = quantity;
 }
 
-function CartItem(product, price, quantity, cost) {
+function CartItem(product, price, quantity, cost, department) {
     this.product = product;
     this.price = price;
     this.quantity = quantity;
     this.cost = cost;
+    this.department = department;
 }
 
 
@@ -84,6 +85,16 @@ function verifyReturningUser() {
             if (err) throw err;
 
         });
+        connection.query("SELECT account_balance FROM bamazon_user_management." + currentUser + ";", function(err, res) {
+
+            if (err) throw err;
+            var n = res.length;
+            for (var i = 0; i < n; i++) {
+                accountBalance = res[i].account_balance;
+            }
+
+
+        });
 
     });
 
@@ -121,7 +132,10 @@ function createNewUser() {
 }
 
 function newUserConfirmed() {
-    setTimeout(function() { console.log("\nYOUR ACCOUNT HAS BEEN SUCCESSFULLY CREATED\n\n WELCOME TO BAMAZON " + currentUser); mainMenu(); }, 1000);
+    setTimeout(function() {
+        console.log("\nYOUR ACCOUNT HAS BEEN SUCCESSFULLY CREATED\n\n WELCOME TO BAMAZON " + currentUser + "\n\n");
+        mainMenu();
+    }, 1000);
 
     connection.query("INSERT INTO bamazon.useraccounts SET ?", {
         username: currentUser,
@@ -133,22 +147,18 @@ function newUserConfirmed() {
 
     });
 
-    connection.query("CREATE TABLE bamazon_user_management." + currentUser + " (id INTEGER(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, account_balance DECIMAL(8, 2), purchase VARCHAR(100), quantity INTEGER(5), purchase_date VARCHAR(100), cost DECIMAL(8, 2));",
+    connection.query("CREATE TABLE bamazon_user_management." + currentUser + " (id INTEGER(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, account_balance DECIMAL(8, 2), purchase VARCHAR(100), quantity INTEGER(5), department VARCHAR(50), purchase_date VARCHAR(100), cost DECIMAL(8, 2));",
         function(err, res) {
             if (err) throw err;
 
         });
 
     connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
-        account_balance: 1000,
-        purchase: "iphone",
-        quantity: 1,
-        purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
-        cost: 250
+        account_balance: 2000,
     }, function(err, res) {
         if (err) throw err;
     });
-
+    accountBalance = 2000;
 }
 
 function mainMenu() {
@@ -210,7 +220,7 @@ function browse() {
         message: "ENTER YOUR DESIRED QUANTITY",
     }]).then(function(answer) {
         cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity);
-        var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity));
+        var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity), productsArray[parseInt(answer.shopping) - 1].department);
         shoppingCartArray.push(cartObj);
 
         displayShoppingCart();
@@ -235,6 +245,17 @@ function displayShoppingCart() {
             );
             var n = shoppingCartArray.length;
             for (var i = 0; i < n; i++) {
+                accountBalance -= cost;
+                connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
+                    account_balance: accountBalance,
+                    purchase: shoppingCartArray[i].product,
+                    quantity: shoppingCartArray[i].quantity,
+                    department: shoppingCartArray[i].department,
+                    purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
+                    cost: shoppingCartArray[i].cost
+                }, function(err, res) {
+                    if (err) throw err;
+                });
                 totalOrderCost += shoppingCartArray[i].cost;
                 console.log(
                     ` \n  ${shoppingCartArray[i].product}             $${shoppingCartArray[i].price}      ${shoppingCartArray[i].quantity}          $${shoppingCartArray[i].cost}`
@@ -249,5 +270,6 @@ function displayShoppingCart() {
             );
 
         }
+
     });
 }
