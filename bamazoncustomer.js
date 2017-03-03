@@ -116,9 +116,17 @@ var start = function() {
                 type: "password",
                 message: "PASSWORD (case sensitive):"
             }]).then(function(answer) {
-                currentUser = answer.user;
                 password = answer.pass;
-                verifyReturningUser();
+                currentUser = answer.user;
+                if (password.includes(";") || password.includes(")")) {
+                    console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
+                    setTimeout(start, 1000);
+                } else if (password.length > 12) {
+                    console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
+                    setTimeout(start, 1000);
+                } else {
+                    verifyReturningUser();
+                }
             });
         }
     });
@@ -128,7 +136,7 @@ start();
 function verifyReturningUser() {
     connection.query("SELECT username, password FROM bamazon.useraccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
         if (err) throw err;
-        if (res == "") {
+        else if (res == "") {
             console.log("\nINVALID USERNAME/PASSWORD COMBINATION\n");
             setTimeout(start, 1500);
         } else {
@@ -338,6 +346,10 @@ function browse() {
         message: "ENTER YOUR DESIRED QUANTITY",
     }]).then(function(answer) {
         newQuant = productsArray[parseInt(answer.shopping) - 1].quantity - parseInt(answer.quantity);
+        if (newQuant <= 0) {
+            console.log("INSUFFICIENT QUANTITY, PLEASE TRY AGAIN");
+            browse();
+        }
         cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity);
         var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity), productsArray[parseInt(answer.shopping) - 1].department);
         shoppingCartArray.push(cartObj);
@@ -365,7 +377,75 @@ function displayShoppingCart() {
                 `\n\n    PRODUCT                       PRICE    QUANTITY        TOTAL
 --------------------------------------------------------------------------------------- `
             );
+
+            // var header = [{
+            //        value: "PRODUCT",
+            //        headerColor: "cyan",
+            //        color: "white",
+            //        align: "center",
+            //        width: 7
+            //    }, {
+            //        value: "PRICE",
+            //        headerColor: "cyan",
+            //        color: "green",
+            //        align: "left",
+            //        paddingLeft: 2,
+            //        width: 35,
+            //        formatter: function(value) {
+            //            var str = "$" + value.toFixed(2);
+            //            return str;
+            //        }
+
+            //    }, {
+            //        value: "QUANTITY",
+            //        headerColor: "cyan",
+            //        color: "green",
+            //        align: "center",
+            //        width: 15,
+
+            //    }, {
+            //        value: "TOTAL",
+            //        headerColor: "cyan",
+            //        color: "yellow",
+            //        align: "center",
+            //        width: 20
+            //    }];
+
+            //    //Example with arrays as rows 
+            //    var rows = [];
+            //    var n = productsArray.length;
+            //    var x = 0;
+            //    do {
+            //        rows.push([productsArray[x].id, productsArray[x].product, productsArray[x].price, productsArray[x].department, productsArray[x].quantity]);
+            //        x++;
+            //    }
+            //    while (x < n);
+
+            //    var t1 = Table(header, rows, {
+            //        borderStyle: 1,
+            //        borderColor: "blue",
+            //        paddingBottom: 0,
+            //        headerAlign: "center",
+            //        align: "center",
+            //        color: "white"
+            //    });
+
+            //    str1 = t1.render();
+            //    console.log(str1);
+
+
+
+
+
+
+
+
+
             var n = shoppingCartArray.length;
+
+
+
+
             for (var i = 0; i < n; i++) {
                 cost = shoppingCartArray[i].cost;
                 accountBalance -= cost;

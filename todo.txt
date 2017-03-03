@@ -1,2 +1,3 @@
 - fix total cost to display only 2 decimal places in console
 - reformat console outputs
+- rework insufficient quantity
