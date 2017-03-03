@@ -3,7 +3,8 @@ var mysql = require("mysql");
 var inquirer = require("inquirer");
 var moment = require("moment");
 var $ = require("jquery");
-
+var Table = require("tty-table");
+var chalk = require("chalk");
 // global variables
 var currentUser;
 var password;
@@ -41,34 +42,88 @@ function CartItem(product, price, quantity, cost, department) {
     this.department = department;
 }
 
+var chalk = require('chalk');
+
+var header = [{
+    value: "DEPARTMENT",
+    headerColor: "cyan",
+    color: "white",
+    align: "left",
+    paddingLeft: 5,
+    width: 25
+}, {
+    value: "PRICE",
+    headerColor: "cyan",
+    color: "green",
+    width: 10,
+    formatter: function(value) {
+        var str = "$" + value.toFixed(2);
+        return str;
+    }
+}, {
+    value: "PRODUCT",
+    headerColor: "cyan",
+    color: "blue",
+    align: "left",
+    paddingLeft: 5,
+    width: 30
+}];
+
+//Example with arrays as rows 
+var rows = [
+    ["hamburger", 2.50, "no"],
+    ["el jefe's special cream sauce", 0.10, "yes"],
+    ["two tacos, rice and beans topped with cheddar cheese", 9.80, "no"],
+    ["apple slices", 1.00, "yes"],
+    ["ham sandwich", 1.50, "no"],
+    ["macaroni, ham and peruvian mozzarella", 3.75, "no"]
+];
+
+
+var t1 = Table(header, rows, {
+    borderStyle: 1,
+    borderColor: "blue",
+    paddingBottom: 0,
+    headerAlign: "center",
+    align: "center",
+    color: "white"
+});
+
+str1 = t1.render();
+console.log(str1);
+
+
+
+
+
 
 var start = function() {
-    inquirer.prompt({
-        name: "usertype",
-        type: "list",
-        message: "Are you a new user or returning user",
-        choices: ["NEW USER", "RETURNING USER"]
-    }).then(function(answer) {
-        if (answer.usertype === "NEW USER") {
-            createNewUser();
-        } else {
-            inquirer.prompt([{
-                name: "user",
-                type: "input",
-                message: "USERNAME:"
-            }, {
-                name: "pass",
-                type: "password",
-                message: "PASSWORD (case sensitive):"
-            }]).then(function(answer) {
-                currentUser = answer.user;
-                password = answer.pass;
-                verifyReturningUser();
-            });
-        }
-    });
-}
-start();
+        inquirer.prompt({
+            name: "usertype",
+            type: "list",
+            message: "Are you a new user or returning user",
+            choices: ["NEW USER", "RETURNING USER"]
+        }).then(function(answer) {
+            if (answer.usertype === "NEW USER") {
+                createNewUser();
+            } else {
+                inquirer.prompt([{
+                    name: "user",
+                    type: "input",
+                    message: "USERNAME:"
+                }, {
+                    name: "pass",
+                    type: "password",
+                    message: "PASSWORD (case sensitive):"
+                }]).then(function(answer) {
+                    currentUser = answer.user;
+                    password = answer.pass;
+                    verifyReturningUser();
+                });
+            }
+        });
+    }
+    // start();
 
 function verifyReturningUser() {
     connection.query("SELECT username, password FROM bamazon.useraccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
