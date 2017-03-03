@@ -316,7 +316,7 @@ function browse() {
 
     str1 = t1.render();
     console.log(str1);
-    
+
 
     //     console.log(
     //         ` ID      PRODUCT      PRICE     DEPARTMENT     QUANTITY
@@ -328,23 +328,27 @@ function browse() {
     //         );
 
     //     }
-    //     inquirer.prompt([{
-    //         name: "shopping",
-    //         type: "input",
-    //         message: "INPUT THE ID OF THE PRODUCT YOU WISH TO PURCHASE"
-    //     }, {
-    //         name: "quantity",
-    //         type: "input",
-    //         message: "ENTER YOUR DESIRED QUANTITY",
-    //     }]).then(function(answer) {
-    //         cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity);
-    //         var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity), productsArray[parseInt(answer.shopping) - 1].department);
-    //         shoppingCartArray.push(cartObj);
+    inquirer.prompt([{
+        name: "shopping",
+        type: "input",
+        message: "INPUT THE ID OF THE PRODUCT YOU WISH TO PURCHASE"
+    }, {
+        name: "quantity",
+        type: "input",
+        message: "ENTER YOUR DESIRED QUANTITY",
+    }]).then(function(answer) {
+        newQuant = productsArray[parseInt(answer.shopping) - 1].quantity - parseInt(answer.quantity);
+        cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity);
+        var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity), productsArray[parseInt(answer.shopping) - 1].department);
+        shoppingCartArray.push(cartObj);
+        connection.query("UPDATE bamazon.products SET quantity=" + newQuant + " WHERE id=" + parseInt(answer.shopping) + ";", function(err, res) {
+            if (err) throw err;
 
-    //         displayShoppingCart();
+        });
+        displayShoppingCart();
 
 
-    //     });
+    });
 }
 
 function displayShoppingCart() {
