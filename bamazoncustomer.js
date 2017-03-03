@@ -25,12 +25,12 @@ var connection = mysql.createConnection({
 });
 
 // constructor function for products
-function Product(id, product, product_description, department, price, quantity) {
+function Product(id, product, price, department, quantity) {
     this.id = id;
     this.product = product;
-    this.product_description = product_description;
-    this.department = department;
     this.price = price;
+    this.department = department;
+
     this.quantity = quantity;
 }
 
@@ -44,53 +44,53 @@ function CartItem(product, price, quantity, cost, department) {
 
 var chalk = require('chalk');
 
-var header = [{
-    value: "DEPARTMENT",
-    headerColor: "cyan",
-    color: "white",
-    align: "left",
-    paddingLeft: 5,
-    width: 25
-}, {
-    value: "PRICE",
-    headerColor: "cyan",
-    color: "green",
-    width: 10,
-    formatter: function(value) {
-        var str = "$" + value.toFixed(2);
-        return str;
-    }
-}, {
-    value: "PRODUCT",
-    headerColor: "cyan",
-    color: "blue",
-    align: "left",
-    paddingLeft: 5,
-    width: 30
-}];
+// var header = [{
+//     value: "DEPARTMENT",
+//     headerColor: "cyan",
+//     color: "white",
+//     align: "left",
+//     paddingLeft: 5,
+//     width: 25
+// }, {
+//     value: "PRICE",
+//     headerColor: "cyan",
+//     color: "green",
+//     width: 10,
+//     formatter: function(value) {
+//         var str = "$" + value.toFixed(2);
+//         return str;
+//     }
+// }, {
+//     value: "PRODUCT",
+//     headerColor: "cyan",
+//     color: "blue",
+//     align: "left",
+//     paddingLeft: 5,
+//     width: 30
+// }];
 
-//Example with arrays as rows 
-var rows = [
-    ["hamburger", 2.50, "no"],
-    ["el jefe's special cream sauce", 0.10, "yes"],
-    ["two tacos, rice and beans topped with cheddar cheese", 9.80, "no"],
-    ["apple slices", 1.00, "yes"],
-    ["ham sandwich", 1.50, "no"],
-    ["macaroni, ham and peruvian mozzarella", 3.75, "no"]
-];
+// //Example with arrays as rows 
+// var rows = [
+//     ["hamburger", 2.50, "no"],
+//     ["el jefe's special cream sauce", 0.10, "yes"],
+//     ["two tacos, rice and beans topped with cheddar cheese", 9.80, "no"],
+//     ["apple slices", 1.00, "yes"],
+//     ["ham sandwich", 1.50, "no"],
+//     ["macaroni, ham and peruvian mozzarella", 3.75, "no"]
+// ];
 
 
-var t1 = Table(header, rows, {
-    borderStyle: 1,
-    borderColor: "blue",
-    paddingBottom: 0,
-    headerAlign: "center",
-    align: "center",
-    color: "white"
-});
+// var t1 = Table(header, rows, {
+//     borderStyle: 1,
+//     borderColor: "blue",
+//     paddingBottom: 0,
+//     headerAlign: "center",
+//     align: "center",
+//     color: "white"
+// });
 
-str1 = t1.render();
-console.log(str1);
+// str1 = t1.render();
+// console.log(str1);
 
 
 
@@ -98,32 +98,32 @@ console.log(str1);
 
 
 var start = function() {
-        inquirer.prompt({
-            name: "usertype",
-            type: "list",
-            message: "Are you a new user or returning user",
-            choices: ["NEW USER", "RETURNING USER"]
-        }).then(function(answer) {
-            if (answer.usertype === "NEW USER") {
-                createNewUser();
-            } else {
-                inquirer.prompt([{
-                    name: "user",
-                    type: "input",
-                    message: "USERNAME:"
-                }, {
-                    name: "pass",
-                    type: "password",
-                    message: "PASSWORD (case sensitive):"
-                }]).then(function(answer) {
-                    currentUser = answer.user;
-                    password = answer.pass;
-                    verifyReturningUser();
-                });
-            }
-        });
-    }
-    // start();
+    inquirer.prompt({
+        name: "usertype",
+        type: "list",
+        message: "Are you a new user or returning user",
+        choices: ["NEW USER", "RETURNING USER"]
+    }).then(function(answer) {
+        if (answer.usertype === "NEW USER") {
+            createNewUser();
+        } else {
+            inquirer.prompt([{
+                name: "user",
+                type: "input",
+                message: "USERNAME:"
+            }, {
+                name: "pass",
+                type: "password",
+                message: "PASSWORD (case sensitive):"
+            }]).then(function(answer) {
+                currentUser = answer.user;
+                password = answer.pass;
+                verifyReturningUser();
+            });
+        }
+    });
+}
+start();
 
 function verifyReturningUser() {
     connection.query("SELECT username, password FROM bamazon.useraccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
@@ -222,7 +222,7 @@ function mainMenu() {
             if (err) throw err;
             var n = res.length;
             for (var i = 0; i < n; i++) {
-                var productObj = new Product(res[i].id, res[i].product, res[i].product_description, res[i].department, res[i].price, res[i].quantity);
+                var productObj = new Product(res[i].id, res[i].product, res[i].price, res[i].department, res[i].quantity);
                 productsArray.push(productObj);
                 productsIdArray.push(i + 1);
             }
@@ -254,34 +254,97 @@ function mainMenu() {
 }
 
 function browse() {
-    var n = productsArray.length;
-    console.log(
-        ` ID      PRODUCT      PRICE     DEPARTMENT     QUANTITY
------------------------------------------------------------------------ `
-    );
-    for (var i = 0; i < n; i++) {
-        console.log(
-            ` ${productsArray[i].id}    ${productsArray[i].product}      ${productsArray[i].price}         ${productsArray[i].department}          ${productsArray[i].quantity} \n\n`
-        );
 
-    }
-    inquirer.prompt([{
-        name: "shopping",
-        type: "input",
-        message: "INPUT THE ID OF THE PRODUCT YOU WISH TO PURCHASE"
+    // var n = productsArray.length;
+
+    var header = [{
+        value: "ID",
+        headerColor: "cyan",
+        color: "white",
+        align: "center",
+        width: 7
     }, {
-        name: "quantity",
-        type: "input",
-        message: "ENTER YOUR DESIRED QUANTITY",
-    }]).then(function(answer) {
-        cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity);
-        var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity), productsArray[parseInt(answer.shopping) - 1].department);
-        shoppingCartArray.push(cartObj);
+        value: "PRODUCT",
+        headerColor: "cyan",
+        color: "green",
+        align: "left",
+        paddingLeft: 2,
+        width: 35
 
-        displayShoppingCart();
+    }, {
+        value: "PRICE",
+        headerColor: "cyan",
+        color: "green",
+        align: "center",
+        width: 15,
+        formatter: function(value) {
+            var str = "$" + value.toFixed(2);
+            return str;
+        }
+    }, {
+        value: "DEPARTMENT",
+        headerColor: "cyan",
+        color: "yellow",
+        align: "center",
+        width: 20
+    }, {
+        value: "QUANTITY",
+        headerColor: "cyan",
+        color: "green",
+        align: "center",
+        width: 20
+    }];
 
+    //Example with arrays as rows 
+    var rows = [];
+    var n = productsArray.length;
+    var x = 0;
+    do {
+        rows.push([productsArray[x].id, productsArray[x].product, productsArray[x].price, productsArray[x].department, productsArray[x].quantity]);
+        x++;
+    }
+    while (x < n);
 
+    var t1 = Table(header, rows, {
+        borderStyle: 1,
+        borderColor: "blue",
+        paddingBottom: 0,
+        headerAlign: "center",
+        align: "center",
+        color: "white"
     });
+
+    str1 = t1.render();
+    console.log(str1);
+    
+
+    //     console.log(
+    //         ` ID      PRODUCT      PRICE     DEPARTMENT     QUANTITY
+    // ----------------------------------------------------------------------- `
+    //     );
+    //     for (var i = 0; i < n; i++) {
+    //         console.log(
+    //             ` ${productsArray[i].id}    ${productsArray[i].product}      ${productsArray[i].price}         ${productsArray[i].department}          ${productsArray[i].quantity} \n\n`
+    //         );
+
+    //     }
+    //     inquirer.prompt([{
+    //         name: "shopping",
+    //         type: "input",
+    //         message: "INPUT THE ID OF THE PRODUCT YOU WISH TO PURCHASE"
+    //     }, {
+    //         name: "quantity",
+    //         type: "input",
+    //         message: "ENTER YOUR DESIRED QUANTITY",
+    //     }]).then(function(answer) {
+    //         cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity);
+    //         var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost = (productsArray[parseInt(answer.shopping) - 1].price) * parseInt(answer.quantity), productsArray[parseInt(answer.shopping) - 1].department);
+    //         shoppingCartArray.push(cartObj);
+
+    //         displayShoppingCart();
+
+
+    //     });
 }
 
 function displayShoppingCart() {
