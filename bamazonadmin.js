@@ -4,7 +4,7 @@ var inquirer = require("inquirer");
 var moment = require("moment");
 var Table = require("tty-table");
 var chalk = require("chalk");
-// global variables
+// global variables 
 var userType;
 var currentUser;
 var password;
@@ -16,7 +16,7 @@ var totalOrderCost = 0;
 var accountBalance = 0;
 var newQuant;
 var rows = [];
-var departmentArray = ["power tools", "books", "movies", "electronics"];
+var departmentArray = [];
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -81,6 +81,13 @@ var start = function() {
 start();
 
 function verifyReturningUser() {
+    connection.query("SELECT * FROM bamazon.departments", function(err, res) {
+        if (err) throw err;
+        var n = res.length;
+        for (var i = 0; i < n; i++) {
+            departmentArray.push(res[i].department_name);
+        }
+    });
     connection.query("SELECT username, password FROM bamazon.adminaccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
         if (err) throw err;
         else if (res == "") {
@@ -297,8 +304,35 @@ function viewDepartmentSales() {
 }
 
 function createNewDepartment() {
-    console.log("hello");
+    if (userType === "MANAGER") {
+        console.log("\nI'M SORRY YOU DO NOT HAVE ACCESS TO THIS FUNCTION\n");
+        setTimeout(mainMenu, 1500);
+    } else {
+
+        inquirer.prompt([{
+            name: "department",
+            type: "input",
+            message: "WHAT IS THE NAME OF THE DEPARTMENT YOU WANT TO CREATE?"
+        }, {
+            name: "overhead",
+            type: "input",
+            message: "ENTER AN ESTIMATED OVERHEAD COST?"
+        }]).then(function(answer) {
+            connection.query("INSERT INTO bamazon.departments SET ?", {
+                department_name: answer.department,
+                over_head_costs: answer.overhead
+            }, function(err, res) {
+                if (err) throw err;
+                else {
+                    departmentArray.push(answer.department);
+                    console.log("department successfully added!!")
+                    setTimeout(mainMenu, 1500);
+                }
+            });
+        });
+    }
 }
+
 
 function generateStrategy() {
     console.log("hello");
