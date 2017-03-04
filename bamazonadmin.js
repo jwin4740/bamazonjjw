@@ -14,14 +14,16 @@ var shoppingCartArray = [];
 var cost = 0;
 var totalOrderCost = 0;
 var accountBalance = 0;
+var newQuant;
+var rows = [];
+var departmentArray = ["power tools", "books", "movies", "electronics"];
 
 // creates connection to mysql
 var connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
     user: "root",
-    password: "platinum",
-
+    password: "platinum"
 });
 
 // constructor function for products
@@ -40,9 +42,6 @@ function CartItem(product, price, quantity, cost, department) {
     this.cost = cost;
     this.department = department;
 }
-
-
-
 
 var start = function() {
     inquirer.prompt({
@@ -102,6 +101,9 @@ function verifyReturningUser() {
 
 
 function mainMenu() {
+    rows = [];
+    productsArray = [];
+    productsIdArray = [];
     connection.query("SELECT * FROM bamazon.products;",
         function(err, res) {
             if (err) throw err;
@@ -126,6 +128,7 @@ function mainMenu() {
             "GENERATE STRATEGY REPORT (corporate access only)"
         ]
     }).then(function(answer) {
+
         switch (answer.adminmenu) {
             case "VIEW PRODUCTS":
                 checkInventory(999);
@@ -193,7 +196,7 @@ function checkInventory(y) {
     }];
 
     //Example with arrays as rows 
-    var rows = [];
+
     var n = productsArray.length;
     var x = 0;
     do {
@@ -212,21 +215,81 @@ function checkInventory(y) {
         align: "center",
         color: "white"
     });
-
     str1 = t1.render();
     console.log(str1);
-    console.log("hello");
+    mainMenu();
 }
 
 function addInventory() {
-    connection.query("UPDATE bamazon.products SET quantity=" + newQuant + " WHERE id=" + parseInt(answer.shopping) + ";", function(err, res) {
+    inquirer.prompt([{
+        name: "inventory",
+        type: "input",
+        message: "INPUT THE ID OF THE PRODUCT YOU WISH TO UPDATE"
+    }, {
+        name: "quantity",
+        type: "input",
+        message: "WHAT QUANTITY DO YOU WANT TO SET THIS ITEM TO?",
+    }]).then(function(answer) {
+        newQuant = answer.quantity;
+        connection.query("UPDATE bamazon.products SET quantity=" + newQuant + " WHERE id=" + parseInt(answer.inventory) + ";", function(err, res) {
             if (err) throw err;
-
+            addMore();
         });
+    });
+}
+
+function addMore() {
+    inquirer.prompt([{
+        name: "confirmation",
+        type: "confirm",
+        message: "WOULD YOU LIKE TO ADD MORE ITEMS TO INVENTORY?"
+    }]).then(function(answer) {
+        if (answer.confirmation === true) {
+            addInventory();
+        } else {
+            console.log("items have been successfully added!!!");
+            setTimeout(mainMenu, 1500);
+        }
+    });
 }
 
 function addProducts() {
-    console.log("hello");
+    inquirer.prompt([{
+        name: "product",
+        type: "input",
+        message: "INPUT YOUR PRODUCT"
+    }, {
+        name: "productdescription",
+        type: "input",
+        message: "PLEASE INPUT A PRODUCT DESCRIPTION?"
+    }, {
+        name: "department",
+        type: "list",
+        message: "WHAT DEPARTMENT?",
+        choices: departmentArray
+    }, {
+        name: "price",
+        type: "input",
+        message: "WHAT PRICE DO YOU WANT TO SET THIS ITEM TO?"
+    }, {
+        name: "quantity",
+        type: "input",
+        message: "WHAT QUANTITY DO YOU WANT TO SET THIS ITEM TO?"
+    }]).then(function(answer) {
+        connection.query("INSERT INTO bamazon.products SET ?", {
+            product: answer.product,
+            product_description: answer.productdescription,
+            department: answer.department,
+            price: answer.price,
+            quantity: answer.quantity
+        }, function(err, res) {
+            if (err) throw err;
+            else {
+                console.log("product successfully added!!")
+                setTimeout(mainMenu, 1500);
+            }
+        });
+    });
 }
 
 function viewDepartmentSales() {
