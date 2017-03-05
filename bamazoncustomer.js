@@ -17,6 +17,7 @@ var accountBalance = 0;
 var departmentArray = [];
 var departmentTotalsArray = [];
 var m = 0;
+var tempSum = 25;
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -44,65 +45,65 @@ function CartItem(product, price, quantity, cost, department) {
     this.department = department;
 }
 
-connection.query("SELECT * FROM bamazon.departments", function(err, res) {
-    if (err) throw err;
-    var n = res.length;
-    for (var i = 0; i < n; i++) {
-        departmentArray.push(res[i].department_name);
-    }
-    m = departmentArray.length;
-    getSums();
+// department object
 
-});
+function DepartmentTotal(bamdepartment, bamtotal) {
+    this.bamdepartment = bamdepartment;
+    this.bamtotal = bamtotal;
+}
 
+
+getSums();
 function getSums() {
-    for (var i = 0; i < m; i++) {
-        connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + departmentArray[i] + "';",
+        connection.query("SELECT * FROM bamazon.departments;",
             function(err, res) {
                 if (err) throw err;
-                var b = res[0]['SUM(cost)'];
-                departmentTotalsArray.push(b);
+                for (var i = 0; i < n; i++) {
+                var n = res.length;
+                var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
+                departmentTotalsArray.push(depTotalObj);
+                }
             });
-    }
+    
 }
 
 
 var start = function() {
-    inquirer.prompt({
-        name: "usertype",
-        type: "list",
-        message: "Are you a new user or returning user",
-        choices: ["NEW USER", "RETURNING USER"]
-    }).then(function(answer) {
-        if (answer.usertype === "NEW USER") {
-            createNewUser();
-        } else {
-            inquirer.prompt([{
-                name: "user",
-                type: "input",
-                message: "USERNAME:"
-            }, {
-                name: "pass",
-                type: "password",
-                message: "PASSWORD (case sensitive):"
-            }]).then(function(answer) {
-                console.log(departmentTotalsArray);
-                password = answer.pass;
-                currentUser = answer.user;
-                if (password.includes(";") || password.includes(")")) {
-                    console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
-                    setTimeout(start, 1000);
-                } else if (password.length > 12) {
-                    console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
-                    setTimeout(start, 1000);
-                } else {
-                    verifyReturningUser();
-                }
-            });
-        }
-    });
-}
-start();
+        inquirer.prompt({
+            name: "usertype",
+            type: "list",
+            message: "Are you a new user or returning user",
+            choices: ["NEW USER", "RETURNING USER"]
+        }).then(function(answer) {
+            if (answer.usertype === "NEW USER") {
+                createNewUser();
+            } else {
+                inquirer.prompt([{
+                    name: "user",
+                    type: "input",
+                    message: "USERNAME:"
+                }, {
+                    name: "pass",
+                    type: "password",
+                    message: "PASSWORD (case sensitive):"
+                }]).then(function(answer) {
+                    console.log(departmentTotalsArray);
+                    password = answer.pass;
+                    currentUser = answer.user;
+                    if (password.includes(";") || password.includes(")")) {
+                        console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
+                        setTimeout(start, 1000);
+                    } else if (password.length > 12) {
+                        console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
+                        setTimeout(start, 1000);
+                    } else {
+                        verifyReturningUser();
+                    }
+                });
+            }
+        });
+    }
+    start();
 
 function verifyReturningUser() {
     connection.query("SELECT username, password FROM bamazon.useraccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
@@ -398,19 +399,7 @@ function displayShoppingCart() {
             //    str1 = t1.render();
             //    console.log(str1);
 
-
-
-
-
-
-
-
-
             var n = shoppingCartArray.length;
-
-
-
-
             for (var i = 0; i < n; i++) {
                 cost = shoppingCartArray[i].cost;
                 accountBalance -= cost;
@@ -435,12 +424,13 @@ function displayShoppingCart() {
                     if (err) throw err;
                 });
 
-
-                connection.query("UPDATE bamazon.departments SET ? WHERE department_name=" + shoppingCartArray[i].department, {
-                    total_department_sales: shoppingCartArray[i].department
-                }, function(err, res) {
+                 connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + shoppingCartArray[i].department + "';", function(err, res) {
                     if (err) throw err;
+                    tempSum = res[0]['SUM(cost)'];
                 });
+    
+                updateDeptCosts(shoppingCartArray[i].department);
+
 
 
                 totalOrderCost += shoppingCartArray[i].cost;
@@ -459,4 +449,14 @@ function displayShoppingCart() {
         }
         setTimeout(mainMenu, 1500);
     });
+}
+
+function updateDeptCosts (department) {
+     connection.query("UPDATE bamazon.departments SET ? WHERE department_name='" + department + "';", {
+                    total_department_sales: tempSum
+                }, function(err, res) {
+                    if (err) throw err;
+                });
+
+
 }

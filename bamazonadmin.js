@@ -18,6 +18,8 @@ var newQuant;
 var rows = [];
 var departmentArray = [];
 var m = 0;
+var departmentTotalsArray = [];
+
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -43,6 +45,32 @@ function CartItem(product, price, quantity, cost, department) {
     this.cost = cost;
     this.department = department;
 }
+
+// department object
+
+function DepartmentTotal(bamdepartment, bamtotal) {
+    this.bamdepartment = bamdepartment;
+    this.bamtotal = bamtotal;
+}
+
+
+getSums();
+
+function getSums() {
+
+    connection.query("SELECT * FROM bamazon.departments;",
+        function(err, res) {
+            if (err) throw err;
+            var n = res.length;
+            for (var i = 0; i < n; i++) {
+                var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
+                departmentTotalsArray.push(depTotalObj);
+             
+            }
+        });
+
+}
+
 
 var start = function() {
     inquirer.prompt({
@@ -82,13 +110,6 @@ var start = function() {
 start();
 
 function verifyReturningUser() {
-    connection.query("SELECT * FROM bamazon.departments", function(err, res) {
-        if (err) throw err;
-        var n = res.length;
-        for (var i = 0; i < n; i++) {
-            departmentArray.push(res[i].department_name);
-        }
-    });
     connection.query("SELECT username, password FROM bamazon.adminaccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
         if (err) throw err;
         else if (res == "") {
@@ -301,14 +322,11 @@ function addProducts() {
 }
 
 function viewDepartmentSales() {
-    m = departmentArray.length;
-    console.log(m);
-    for (var i = 0; i < m; i++) {
-        connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + departmentArray[i] + "';",
-            function(err, res) {
-                if (err) throw err;
-                console.log(res[0]['SUM(cost)']);
-            });
+    var b = departmentTotalsArray.length;
+
+    for (var i = 0; i < b; i++) {
+        console.log(departmentTotalsArray[i].bamdepartment);
+        console.log(departmentTotalsArray[i].bamtotal + "\n\n");
     }
 }
 
