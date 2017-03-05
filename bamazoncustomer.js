@@ -120,18 +120,13 @@ function verifyReturningUser() {
 
         });
         connection.query("SELECT account_balance FROM bamazon_user_management." + currentUser + ";", function(err, res) {
-
             if (err) throw err;
             var n = res.length;
             for (var i = 0; i < n; i++) {
                 accountBalance = res[i].account_balance;
             }
-
-
         });
-
     });
-
 }
 
 function createNewUser() {
@@ -205,7 +200,6 @@ function mainMenu() {
                 productsArray.push(productObj);
                 productsIdArray.push(i + 1);
             }
-
         });
     inquirer.prompt({
         name: "mainmenu",
@@ -442,13 +436,8 @@ function displayShoppingCart() {
                 });
 
 
-                connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
-                    account_balance: accountBalance,
-                    purchase: shoppingCartArray[i].product,
-                    quantity: shoppingCartArray[i].quantity,
-                    department: shoppingCartArray[i].department,
-                    purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
-                    cost: shoppingCartArray[i].cost
+                connection.query("UPDATE bamazon.departments SET ? WHERE department_name=" + shoppingCartArray[i].department, {
+                    total_department_sales: shoppingCartArray[i].department
                 }, function(err, res) {
                     if (err) throw err;
                 });
