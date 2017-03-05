@@ -1,10 +1,10 @@
 // NPM dependencies
-var mysql = require("mysql");
-var inquirer = require("inquirer");
-var moment = require("moment");
-var $ = require("jquery");
-var Table = require("tty-table");
-var chalk = require("chalk");
+const mysql = require("mysql");
+const inquirer = require("inquirer");
+const moment = require("moment");
+const $ = require("jquery");
+const Table = require("tty-table");
+const chalk = require("chalk");
 // global variables
 var currentUser;
 var password;
@@ -14,6 +14,9 @@ var shoppingCartArray = [];
 var cost = 0;
 var totalOrderCost = 0;
 var accountBalance = 0;
+var departmentArray = [];
+var departmentTotalsArray = [];
+var m = 0;
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -41,59 +44,27 @@ function CartItem(product, price, quantity, cost, department) {
     this.department = department;
 }
 
-var chalk = require('chalk');
+connection.query("SELECT * FROM bamazon.departments", function(err, res) {
+    if (err) throw err;
+    var n = res.length;
+    for (var i = 0; i < n; i++) {
+        departmentArray.push(res[i].department_name);
+    }
+    m = departmentArray.length;
+    getSums();
 
-// var header = [{
-//     value: "DEPARTMENT",
-//     headerColor: "cyan",
-//     color: "white",
-//     align: "left",
-//     paddingLeft: 5,
-//     width: 25
-// }, {
-//     value: "PRICE",
-//     headerColor: "cyan",
-//     color: "green",
-//     width: 10,
-//     formatter: function(value) {
-//         var str = "$" + value.toFixed(2);
-//         return str;
-//     }
-// }, {
-//     value: "PRODUCT",
-//     headerColor: "cyan",
-//     color: "blue",
-//     align: "left",
-//     paddingLeft: 5,
-//     width: 30
-// }];
+});
 
-// //Example with arrays as rows 
-// var rows = [
-//     ["hamburger", 2.50, "no"],
-//     ["el jefe's special cream sauce", 0.10, "yes"],
-//     ["two tacos, rice and beans topped with cheddar cheese", 9.80, "no"],
-//     ["apple slices", 1.00, "yes"],
-//     ["ham sandwich", 1.50, "no"],
-//     ["macaroni, ham and peruvian mozzarella", 3.75, "no"]
-// ];
-
-
-// var t1 = Table(header, rows, {
-//     borderStyle: 1,
-//     borderColor: "blue",
-//     paddingBottom: 0,
-//     headerAlign: "center",
-//     align: "center",
-//     color: "white"
-// });
-
-// str1 = t1.render();
-// console.log(str1);
-
-
-
-
+function getSums() {
+    for (var i = 0; i < m; i++) {
+        connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + departmentArray[i] + "';",
+            function(err, res) {
+                if (err) throw err;
+                var b = res[0]['SUM(cost)'];
+                departmentTotalsArray.push(b);
+            });
+    }
+}
 
 
 var start = function() {
@@ -115,6 +86,7 @@ var start = function() {
                 type: "password",
                 message: "PASSWORD (case sensitive):"
             }]).then(function(answer) {
+                console.log(departmentTotalsArray);
                 password = answer.pass;
                 currentUser = answer.user;
                 if (password.includes(";") || password.includes(")")) {
@@ -468,6 +440,20 @@ function displayShoppingCart() {
                 }, function(err, res) {
                     if (err) throw err;
                 });
+
+
+                connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
+                    account_balance: accountBalance,
+                    purchase: shoppingCartArray[i].product,
+                    quantity: shoppingCartArray[i].quantity,
+                    department: shoppingCartArray[i].department,
+                    purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
+                    cost: shoppingCartArray[i].cost
+                }, function(err, res) {
+                    if (err) throw err;
+                });
+
+
                 totalOrderCost += shoppingCartArray[i].cost;
                 console.log(
                     ` \n  ${shoppingCartArray[i].product}             $${shoppingCartArray[i].price}      ${shoppingCartArray[i].quantity}          $${shoppingCartArray[i].cost}`

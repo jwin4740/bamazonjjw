@@ -17,6 +17,7 @@ var accountBalance = 0;
 var newQuant;
 var rows = [];
 var departmentArray = [];
+var m = 0;
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -300,7 +301,15 @@ function addProducts() {
 }
 
 function viewDepartmentSales() {
-    console.log("hello");
+    m = departmentArray.length;
+    console.log(m);
+    for (var i = 0; i < m; i++) {
+        connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + departmentArray[i] + "';",
+            function(err, res) {
+                if (err) throw err;
+                console.log(res[0]['SUM(cost)']);
+            });
+    }
 }
 
 function createNewDepartment() {
