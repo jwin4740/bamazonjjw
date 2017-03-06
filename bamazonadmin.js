@@ -65,6 +65,7 @@ function getSums() {
             for (var i = 0; i < n; i++) {
                 var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
                 departmentTotalsArray.push(depTotalObj);
+                departmentArray.push(res[i].department_name);
              
             }
         });
@@ -322,12 +323,16 @@ function addProducts() {
 }
 
 function viewDepartmentSales() {
+    if (userType === "MANAGER") {
+        console.log("\nI'M SORRY YOU DO NOT HAVE ACCESS TO THIS FUNCTION\n");
+        setTimeout(mainMenu, 1500);
+    } else {
     var b = departmentTotalsArray.length;
-
     for (var i = 0; i < b; i++) {
         console.log(departmentTotalsArray[i].bamdepartment);
         console.log(departmentTotalsArray[i].bamtotal + "\n\n");
     }
+}
 }
 
 function createNewDepartment() {
