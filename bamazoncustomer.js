@@ -17,7 +17,8 @@ var accountBalance = 0;
 var departmentArray = [];
 var departmentTotalsArray = [];
 var m = 0;
-var tempSum = 25;
+var tempSum;
+
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -427,12 +428,11 @@ function displayShoppingCart() {
                  connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + shoppingCartArray[i].department + "';", function(err, res) {
                     if (err) throw err;
                     tempSum = res[0]['SUM(cost)'];
+                    
                 });
-    
-                updateDeptCosts(shoppingCartArray[i].department);
-
-
-
+                 tempDepartment = shoppingCartArray[i].department;
+            
+                 setTimeout(function () {updateDeptCosts(tempDepartment)}, 1000);
                 totalOrderCost += shoppingCartArray[i].cost;
                 console.log(
                     ` \n  ${shoppingCartArray[i].product}             $${shoppingCartArray[i].price}      ${shoppingCartArray[i].quantity}          $${shoppingCartArray[i].cost}`
@@ -452,8 +452,8 @@ function displayShoppingCart() {
 }
 
 function updateDeptCosts (department) {
-     connection.query("UPDATE bamazon.departments SET ? WHERE department_name='" + department + "';", {
-                    total_department_sales: tempSum
+     connection.query("UPDATE bamazon.departments SET total_department_sales=" + tempSum + " WHERE department_name='" + department + "';", {
+                    
                 }, function(err, res) {
                     if (err) throw err;
                 });

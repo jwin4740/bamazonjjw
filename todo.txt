@@ -1,3 +1,6 @@
 - fix total cost to display only 2 decimal places in console
 - reformat console outputs
 - rework insufficient quantity
+- empty shopping cart array after order placement
+- comment code
+- look into one file and module exports
