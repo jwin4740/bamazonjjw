@@ -71,8 +71,6 @@ function getSums() {
         });
 
 }
-
-
 var start = function() {
     inquirer.prompt({
         name: "usertype",

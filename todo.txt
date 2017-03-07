@@ -6,6 +6,7 @@
 - look into one file and module exports
 - get tables in code
 - insufficient quantities bug
+- create sign out function
 
 
 

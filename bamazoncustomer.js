@@ -63,12 +63,13 @@ getSums();
 function getSums() {
     connection.query("SELECT * FROM bamazon.departments;",
         function(err, res) {
-
             if (err) throw err;
+           
+             var n = res.length;
             for (var i = 0; i < n; i++) {
-                var n = res.length;
                 var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
                 departmentTotalsArray.push(depTotalObj);
+           
             }
         });
 }
@@ -90,44 +91,44 @@ function getBalances() {
 
 // function that holds the user login logic
 var start = function() {
-    inquirer.prompt({
-        name: "usertype",
-        type: "list",
-        message: "Are you a new user or returning user",
-        choices: ["NEW USER", "RETURNING USER"]
-    }).then(function(answer) {
-        if (answer.usertype === "NEW USER") { // if user chooses new user, it calls the createNewUser function
-            createNewUser();
-        } else {
-            inquirer.prompt([{
-                name: "user",
-                type: "input",
-                message: "USERNAME:"
-            }, {
-                name: "pass",
-                type: "password",
-                message: "PASSWORD (case sensitive):"
-            }]).then(function(answer) {
+        inquirer.prompt({
+            name: "usertype",
+            type: "list",
+            message: "Are you a new user or returning user",
+            choices: ["NEW USER", "RETURNING USER"]
+        }).then(function(answer) {
+            if (answer.usertype === "NEW USER") { // if user chooses new user, it calls the createNewUser function
+                createNewUser();
+            } else {
+                inquirer.prompt([{
+                    name: "user",
+                    type: "input",
+                    message: "USERNAME:"
+                }, {
+                    name: "pass",
+                    type: "password",
+                    message: "PASSWORD (case sensitive):"
+                }]).then(function(answer) {
 
-                // stores the username and password in variables and checks if they meet criteria (i.e. avoid sql injections)
-                // if incorrect they are reprompted for the correct user/password combination
-                // if correct there credentials are verified through the mysql database
-                password = answer.pass;
-                currentUser = answer.user;
-                if (password.includes(";") || password.includes(")")) {
-                    console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
-                    setTimeout(start, 1000);
-                } else if (password.length > 12) {
-                    console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
-                    setTimeout(start, 1000);
-                } else {
-                    verifyReturningUser();
-                }
-            });
-        }
-    });
-}
-start();
+                    // stores the username and password in variables and checks if they meet criteria (i.e. avoid sql injections)
+                    // if incorrect they are reprompted for the correct user/password combination
+                    // if correct there credentials are verified through the mysql database
+                    password = answer.pass;
+                    currentUser = answer.user;
+                    if (password.includes(";") || password.includes(")")) {
+                        console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
+                        setTimeout(start, 1000);
+                    } else if (password.length > 12) {
+                        console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
+                        setTimeout(start, 1000);
+                    } else {
+                        verifyReturningUser();
+                    }
+                });
+            }
+        });
+    }
+    start();
 
 
 
@@ -221,6 +222,7 @@ function newUserConfirmed() {
 // once user is confirmed, they are sent to the main menu
 // in the background all the product information is retrieved from the sql database and stored in an array of objects (productsArray)
 function mainMenu() {
+    productsArray = [];
     connection.query("SELECT * FROM bamazon.products;",
         function(err, res) {
             if (err) throw err;
@@ -364,7 +366,7 @@ function browse() {
         // fills a temporary shopping cart with users purchase choices
         var cartObj = new CartItem(productsArray[parseInt(answer.shopping) - 1].product, productsArray[parseInt(answer.shopping) - 1].price, parseInt(answer.quantity), cost, productsArray[parseInt(answer.shopping) - 1].department);
         shoppingCartArray.push(cartObj);
-        console.log(shoppingCartArray);
+        
 
         // connects to the databsae and updates the product's new quantity
         connection.query("UPDATE bamazon.products SET quantity=" + newQuant + " WHERE id=" + parseInt(answer.shopping) + ";", function(err, res) {
@@ -414,6 +416,7 @@ function displayShoppingCart() {
                     if (err) throw err;
                 });
                 tempDepartment = shoppingCartArray[i].department;
+               
 
                 // loops through departmentTotalsArray to find the correct total sales for that department
                 var l = departmentTotalsArray.length;
@@ -425,12 +428,12 @@ function displayShoppingCart() {
                     }
                 }
 
-                
+
                 totalOrderCost += cost; // stores the users current shopping cart total
 
 
             }
-            console.log("\n Your total order cost is: " + totalOrderCost + "!!!!\n");
+            console.log("\n Your total order cost is: " + totalOrderCost + "!!!! It has been successfully processed\n");
 
             // returns to main menu and empties variable values
             setTimeout(function() {
@@ -447,11 +450,8 @@ function displayShoppingCart() {
 
 // updates the total department sales
 function updateDeptCosts(value, department) {
-    connection.query("UPDATE bamazon.departments SET total_department_sales=" + value + " WHERE department_name='" + department + "';", {
-
-    }, function(err, res) {
+    console.log(value);
+    connection.query("UPDATE bamazon.departments SET total_department_sales=" + value + " WHERE department_name='" + department + "';", function(err, res) {
         if (err) throw err;
     });
-
-
 }
