@@ -4,3 +4,62 @@
 - empty shopping cart array after order placement
 - comment code
 - look into one file and module exports
+- get tables in code
+
+
+
+
+         // var header = [{
+            //        value: "PRODUCT",
+            //        headerColor: "cyan",
+            //        color: "white",
+            //        align: "center",
+            //        width: 7
+            //    }, {
+            //        value: "PRICE",
+            //        headerColor: "cyan",
+            //        color: "green",
+            //        align: "left",
+            //        paddingLeft: 2,
+            //        width: 35,
+            //        formatter: function(value) {
+            //            var str = "$" + value.toFixed(2);
+            //            return str;
+            //        }
+
+            //    }, {
+            //        value: "QUANTITY",
+            //        headerColor: "cyan",
+            //        color: "green",
+            //        align: "center",
+            //        width: 15,
+
+            //    }, {
+            //        value: "TOTAL",
+            //        headerColor: "cyan",
+            //        color: "yellow",
+            //        align: "center",
+            //        width: 20
+            //    }];
+
+            //    //Example with arrays as rows 
+            //    var rows = [];
+            //    var n = productsArray.length;
+            //    var x = 0;
+            //    do {
+            //        rows.push([productsArray[x].id, productsArray[x].product, productsArray[x].price, productsArray[x].department, productsArray[x].quantity]);
+            //        x++;
+            //    }
+            //    while (x < n);
+
+            //    var t1 = Table(header, rows, {
+            //        borderStyle: 1,
+            //        borderColor: "blue",
+            //        paddingBottom: 0,
+            //        headerAlign: "center",
+            //        align: "center",
+            //        color: "white"
+            //    });
+
+            //    str1 = t1.render();
+            //    console.log(str1);

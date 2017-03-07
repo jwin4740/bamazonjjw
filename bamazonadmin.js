@@ -66,7 +66,7 @@ function getSums() {
                 var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
                 departmentTotalsArray.push(depTotalObj);
                 departmentArray.push(res[i].department_name);
-             
+
             }
         });
 
@@ -327,12 +327,19 @@ function viewDepartmentSales() {
         console.log("\nI'M SORRY YOU DO NOT HAVE ACCESS TO THIS FUNCTION\n");
         setTimeout(mainMenu, 1500);
     } else {
-    var b = departmentTotalsArray.length;
-    for (var i = 0; i < b; i++) {
-        console.log(departmentTotalsArray[i].bamdepartment);
-        console.log(departmentTotalsArray[i].bamtotal + "\n\n");
+        var n = departmentArray.length;
+        for (var i = 0; i < n; i++) {
+            connection.query("SELECT total_department_sales FROM bamazon.departments WHERE department_name='" + departmentArray[i] + "';", function(err, res) {
+                if (err) throw err;
+                else {
+                    console.log(res);
+                  
+                }
+            });
+
+        }
+        setTimeout(mainMenu, 1500);
     }
-}
 }
 
 function createNewDepartment() {
@@ -367,5 +374,10 @@ function createNewDepartment() {
 
 
 function generateStrategy() {
-    console.log("hello");
+    if (userType === "MANAGER") {
+        console.log("\nI'M SORRY YOU DO NOT HAVE ACCESS TO THIS FUNCTION\n");
+        setTimeout(mainMenu, 1500);
+    } else {
+        console.log("THIS STRATEGY TEAM IS STILL PREPARING OUR REPORT, CHECK BACK LATER");
+    }
 }

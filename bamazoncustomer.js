@@ -1,11 +1,11 @@
+
 // NPM dependencies
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const moment = require("moment");
-const $ = require("jquery");
 const Table = require("tty-table");
 const chalk = require("chalk");
-const appfunctions = require("./functions.js");
+
 // global variables
 var currentUser;
 var password;
@@ -19,9 +19,6 @@ var departmentArray = [];
 var departmentTotalsArray = [];
 var m = 0;
 var tempSum;
-
-
-
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -37,9 +34,11 @@ function Product(id, product, price, department, quantity) {
     this.product = product;
     this.price = price;
     this.department = department;
+
     this.quantity = quantity;
 }
 
+// constructor function that will hold our shopping cart items
 function CartItem(product, price, quantity, cost, department) {
     this.product = product;
     this.price = price;
@@ -48,32 +47,66 @@ function CartItem(product, price, quantity, cost, department) {
     this.department = department;
 }
 
-// department object
-
+// department constructor that grabs the current department net sales
 function DepartmentTotal(bamdepartment, bamtotal) {
     this.bamdepartment = bamdepartment;
     this.bamtotal = bamtotal;
 }
 
 
+// gets current department net sales and stores them in departmentTotalsArray
+getSums();
+function getSums() {
+    connection.query("SELECT * FROM bamazon.departments;",
+        function(err, res) {
+           
+            if (err) throw err;
+            for (var i = 0; i < n; i++) {
+                var n = res.length;
+                var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
+                departmentTotalsArray.push(depTotalObj);
+                console.log(departmentTotalsArray);
+            }
+        });
+}
 
-// getSums();
 
-// function getSums() {
-//         connection.query("SELECT * FROM bamazon.departments;",
-//             function(err, res) {
-//                 if (err) throw err;
-//                 for (var i = 0; i < n; i++) {
-//                 var n = res.length;
-//                 var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
-//                 departmentTotalsArray.push(depTotalObj);
-//                 }
-//             });
-// }
-
-
-// starts with an inquirer prompt that 
-appfunctions.start();
+var start = function() {
+    inquirer.prompt({
+        name: "usertype",
+        type: "list",
+        message: "Are you a new user or returning user",
+        choices: ["NEW USER", "RETURNING USER"]
+    }).then(function(answer) {
+        if (answer.usertype === "NEW USER") {
+            createNewUser();
+        } else {
+            inquirer.prompt([{
+                name: "user",
+                type: "input",
+                message: "USERNAME:"
+            }, {
+                name: "pass",
+                type: "password",
+                message: "PASSWORD (case sensitive):"
+            }]).then(function(answer) {
+                
+                password = answer.pass;
+                currentUser = answer.user;
+                if (password.includes(";") || password.includes(")")) {
+                    console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
+                    setTimeout(start, 1000);
+                } else if (password.length > 12) {
+                    console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
+                    setTimeout(start, 1000);
+                } else {
+                    verifyReturningUser();
+                }
+            });
+        }
+    });
+}
+// start(); // starts the user login logic
 
 function verifyReturningUser() {
     connection.query("SELECT username, password FROM bamazon.useraccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
@@ -180,24 +213,23 @@ function mainMenu() {
     }).then(function(answer) {
         console.log(answer.mainmenu);
         switch (answer.mainmenu) {
-            case "CHECK ACCOUNT BALANCE":
-                console.log("hello");
-                break;
             case "VIEW PURCHASE HISTORY":
-                console.log("hello");
-                afsadf
+                console.log("FUNCTION NOT OPERATIONAL; IN PROGRESS");
+                setTimeout(mainMenu, 1500);
                 break;
             case "SHOP":
-                browse();
+                renderTable();
                 break;
             case "ADD MONEY TO ACCOUNT":
-                console.log("hello");
+                console.log("FUNCTION NOT OPERATIONAL; IN PROGRESS");
+                setTimeout(mainMenu, 1500);
                 break;
         }
     });
 }
 
-function browse() {
+function renderTable() {
+console.log(departmentTotalsArray);
 
     // var n = productsArray.length;
 
@@ -238,8 +270,7 @@ function browse() {
         align: "center",
         width: 20
     }];
-
-    //Example with arrays as rows 
+ 
     var rows = [];
     var n = productsArray.length;
     var x = 0;
@@ -260,18 +291,12 @@ function browse() {
 
     str1 = t1.render();
     console.log(str1);
+    browse();
+}
 
 
-    //     console.log(
-    //         ` ID      PRODUCT      PRICE     DEPARTMENT     QUANTITY
-    // ----------------------------------------------------------------------- `
-    //     );
-    //     for (var i = 0; i < n; i++) {
-    //         console.log(
-    //             ` ${productsArray[i].id}    ${productsArray[i].product}      ${productsArray[i].price}         ${productsArray[i].department}          ${productsArray[i].quantity} \n\n`
-    //         );
+function browse() {
 
-    //     }
     inquirer.prompt([{
         name: "shopping",
         type: "input",
@@ -294,138 +319,69 @@ function browse() {
 
         });
         displayShoppingCart();
-
-
     });
 }
 
 function displayShoppingCart() {
-
     inquirer.prompt({
         name: "shop",
         type: "confirm",
         message: "Would you like to continue shopping?"
     }).then(function(answer) {
-        if (answer.shop) {
-            browse();
-        } else {
-            console.log(
-                `\n\n    PRODUCT                       PRICE    QUANTITY        TOTAL
---------------------------------------------------------------------------------------- `
-            );
+            if (answer.shop) {
+                browse();
+            } else {
+                var n = shoppingCartArray.length;
+                for (var i = 0; i < n; i++) {
+                    cost = shoppingCartArray[i].cost;
+                    accountBalance -= cost;
+                    connection.query("INSERT INTO bamazon.transactions SET ?", {
+                        username: currentUser,
+                        purchase: shoppingCartArray[i].product,
+                        quantity: shoppingCartArray[i].quantity,
+                        department: shoppingCartArray[i].department,
+                        purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
+                        cost: shoppingCartArray[i].cost
+                    }, function(err, res) {
+                        if (err) throw err;
+                    });
+                    connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
+                        account_balance: accountBalance,
+                        purchase: shoppingCartArray[i].product,
+                        quantity: shoppingCartArray[i].quantity,
+                        department: shoppingCartArray[i].department,
+                        purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
+                        cost: shoppingCartArray[i].cost
+                    }, function(err, res) {
+                        if (err) throw err;
+                    });
 
-            // var header = [{
-            //        value: "PRODUCT",
-            //        headerColor: "cyan",
-            //        color: "white",
-            //        align: "center",
-            //        width: 7
-            //    }, {
-            //        value: "PRICE",
-            //        headerColor: "cyan",
-            //        color: "green",
-            //        align: "left",
-            //        paddingLeft: 2,
-            //        width: 35,
-            //        formatter: function(value) {
-            //            var str = "$" + value.toFixed(2);
-            //            return str;
-            //        }
+                    connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + shoppingCartArray[i].department + "';", function(err, res) {
+                        if (err) throw err;
+                        tempSum = res[0]['SUM(cost)'];
 
-            //    }, {
-            //        value: "QUANTITY",
-            //        headerColor: "cyan",
-            //        color: "green",
-            //        align: "center",
-            //        width: 15,
+                    });
+                    tempDepartment = shoppingCartArray[i].department;
 
-            //    }, {
-            //        value: "TOTAL",
-            //        headerColor: "cyan",
-            //        color: "yellow",
-            //        align: "center",
-            //        width: 20
-            //    }];
-
-            //    //Example with arrays as rows 
-            //    var rows = [];
-            //    var n = productsArray.length;
-            //    var x = 0;
-            //    do {
-            //        rows.push([productsArray[x].id, productsArray[x].product, productsArray[x].price, productsArray[x].department, productsArray[x].quantity]);
-            //        x++;
-            //    }
-            //    while (x < n);
-
-            //    var t1 = Table(header, rows, {
-            //        borderStyle: 1,
-            //        borderColor: "blue",
-            //        paddingBottom: 0,
-            //        headerAlign: "center",
-            //        align: "center",
-            //        color: "white"
-            //    });
-
-            //    str1 = t1.render();
-            //    console.log(str1);
-
-            var n = shoppingCartArray.length;
-            for (var i = 0; i < n; i++) {
-                cost = shoppingCartArray[i].cost;
-                accountBalance -= cost;
-                connection.query("INSERT INTO bamazon.transactions SET ?", {
-                    username: currentUser,
-                    purchase: shoppingCartArray[i].product,
-                    quantity: shoppingCartArray[i].quantity,
-                    department: shoppingCartArray[i].department,
-                    purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
-                    cost: shoppingCartArray[i].cost
-                }, function(err, res) {
-                    if (err) throw err;
-                });
-                connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
-                    account_balance: accountBalance,
-                    purchase: shoppingCartArray[i].product,
-                    quantity: shoppingCartArray[i].quantity,
-                    department: shoppingCartArray[i].department,
-                    purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
-                    cost: shoppingCartArray[i].cost
-                }, function(err, res) {
-                    if (err) throw err;
-                });
-
-                 connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + shoppingCartArray[i].department + "';", function(err, res) {
-                    if (err) throw err;
-                    tempSum = res[0]['SUM(cost)'];
-                    
-                });
-                 tempDepartment = shoppingCartArray[i].department;
-            
-                 setTimeout(function () {updateDeptCosts(tempDepartment)}, 1000);
-                totalOrderCost += shoppingCartArray[i].cost;
-                console.log(
-                    ` \n  ${shoppingCartArray[i].product}             $${shoppingCartArray[i].price}      ${shoppingCartArray[i].quantity}          $${shoppingCartArray[i].cost}`
-                );
-
+                    setTimeout(function() { updateDeptCosts(tempDepartment) }, 1000);
+                    totalOrderCost += shoppingCartArray[i].cost;
+                }
+                setTimeout(function() {
+                mainMenu();
+                shoppingCartArray = [];
+            }, 1500);
             }
+            
+        });
+    }
+    
 
-            console.log(
-                `\n                                           
----------------------------------------------------------------------------------------
-                                       TOTAL ORDER COST:  $${totalOrderCost} `
-            );
+    function updateDeptCosts(department) {
+        connection.query("UPDATE bamazon.departments SET total_department_sales=" + tempSum + " WHERE department_name='" + department + "';", {
 
-        }
-        setTimeout(mainMenu, 1500);
-    });
-}
-
-function updateDeptCosts (department) {
-     connection.query("UPDATE bamazon.departments SET total_department_sales=" + tempSum + " WHERE department_name='" + department + "';", {
-                    
-                }, function(err, res) {
-                    if (err) throw err;
-                });
+        }, function(err, res) {
+            if (err) throw err;
+        });
 
 
-}
+    }
