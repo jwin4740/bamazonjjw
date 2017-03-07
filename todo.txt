@@ -7,6 +7,8 @@
 - get tables in code
 - insufficient quantities bug
 - create sign out function
+- new user cant check balance
+- update account balance display function after a purchase is made
 
 
 
