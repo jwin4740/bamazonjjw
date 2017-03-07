@@ -1,4 +1,3 @@
-
 // NPM dependencies
 const mysql = require("mysql");
 const inquirer = require("inquirer");
@@ -19,6 +18,7 @@ var departmentArray = [];
 var departmentTotalsArray = [];
 var m = 0;
 var tempSum;
+var accountBalanceArray = [];
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -34,7 +34,6 @@ function Product(id, product, price, department, quantity) {
     this.product = product;
     this.price = price;
     this.department = department;
-
     this.quantity = quantity;
 }
 
@@ -53,61 +52,85 @@ function DepartmentTotal(bamdepartment, bamtotal) {
     this.bamtotal = bamtotal;
 }
 
+function Account(user, balance) {
+    this.user = user;
+    this.balance = balance;
+}
 
 // gets current department net sales and stores them in departmentTotalsArray
 getSums();
 function getSums() {
     connection.query("SELECT * FROM bamazon.departments;",
         function(err, res) {
-           
+
             if (err) throw err;
             for (var i = 0; i < n; i++) {
                 var n = res.length;
                 var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
                 departmentTotalsArray.push(depTotalObj);
-                console.log(departmentTotalsArray);
             }
         });
 }
 
-
-var start = function() {
-    inquirer.prompt({
-        name: "usertype",
-        type: "list",
-        message: "Are you a new user or returning user",
-        choices: ["NEW USER", "RETURNING USER"]
-    }).then(function(answer) {
-        if (answer.usertype === "NEW USER") {
-            createNewUser();
-        } else {
-            inquirer.prompt([{
-                name: "user",
-                type: "input",
-                message: "USERNAME:"
-            }, {
-                name: "pass",
-                type: "password",
-                message: "PASSWORD (case sensitive):"
-            }]).then(function(answer) {
-                
-                password = answer.pass;
-                currentUser = answer.user;
-                if (password.includes(";") || password.includes(")")) {
-                    console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
-                    setTimeout(start, 1000);
-                } else if (password.length > 12) {
-                    console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
-                    setTimeout(start, 1000);
-                } else {
-                    verifyReturningUser();
-                }
-            });
-        }
-    });
+// stores each user balance in an array
+getBalances();
+function getBalances () {
+  connection.query("SELECT * FROM bamazon.useraccounts;", function(err, res) {
+            if (err) throw err;
+            var n = res.length;
+            for (var i = 0; i < n; i++) {
+                var accountObj = new Account(res[i].username, res[i].account_balance);
+                accountBalanceArray.push(accountObj);
+            }
+        });
 }
-// start(); // starts the user login logic
 
+// function that holds the user login logic
+var start = function() {
+        inquirer.prompt({
+            name: "usertype",
+            type: "list",
+            message: "Are you a new user or returning user",
+            choices: ["NEW USER", "RETURNING USER"]
+        }).then(function(answer) {
+            if (answer.usertype === "NEW USER") {   // if user chooses new user, it calls the createNewUser function
+                createNewUser();
+            } else {
+                inquirer.prompt([{
+                    name: "user",
+                    type: "input",
+                    message: "USERNAME:"
+                }, {
+                    name: "pass",
+                    type: "password",
+                    message: "PASSWORD (case sensitive):"
+                }]).then(function(answer) {
+
+                // stores the username and password in variables and checks if they meet criteria (i.e. avoid sql injections)
+                // if incorrect they are reprompted for the correct user/password combination
+                // if correct there credentials are verified through the mysql database
+                    password = answer.pass;
+                    currentUser = answer.user;
+                    if (password.includes(";") || password.includes(")")) {
+                        console.log("\nPASSWORD CAN'T CONTAIN THE CHARACTERS ';' OR ')', TRY AGAIN\n");
+                        setTimeout(start, 1000);
+                    } else if (password.length > 12) {
+                        console.log("\nPASSWORD LENGTH MUST BE LESS THAN 12 CHARACTERS, TRY AGAIN\n");
+                        setTimeout(start, 1000);
+                    } else {
+                        verifyReturningUser();
+                    }
+                });
+            }
+        });
+    }
+    start(); 
+
+
+
+//  there credentials are verified through the mysql database
+// their login times are recorder via moment npm package
+// account balance is pulled from databse and stored in variable
 function verifyReturningUser() {
     connection.query("SELECT username, password FROM bamazon.useraccounts WHERE username='" + currentUser + "' AND password='" + password + "';", function(err, res) {
         if (err) throw err;
@@ -123,16 +146,11 @@ function verifyReturningUser() {
             if (err) throw err;
 
         });
-        connection.query("SELECT account_balance FROM bamazon_user_management." + currentUser + ";", function(err, res) {
-            if (err) throw err;
-            var n = res.length;
-            for (var i = 0; i < n; i++) {
-                accountBalance = res[i].account_balance;
-            }
-        });
+
     });
 }
 
+// function that creates a new user
 function createNewUser() {
     inquirer.prompt([{
         name: "user",
@@ -164,6 +182,8 @@ function createNewUser() {
     })
 }
 
+// adds the user credentials to the database and gives them a default accountbalance of $2000
+// logs their account creation data to the database
 function newUserConfirmed() {
     setTimeout(function() {
         console.log("\nYOUR ACCOUNT HAS BEEN SUCCESSFULLY CREATED\n\n WELCOME TO BAMAZON " + currentUser + "\n\n");
@@ -177,7 +197,6 @@ function newUserConfirmed() {
         last_login: moment().format('MMMM Do YYYY, h:mm:ss a')
     }, function(err, res) {
         if (err) throw err;
-
     });
 
     connection.query("CREATE TABLE bamazon_user_management." + currentUser + " (id INTEGER(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, cost DECIMAL(8, 2), purchase VARCHAR(100), quantity INTEGER(5), department VARCHAR(50), purchase_date VARCHAR(100), account_balance DECIMAL(8, 2));",
@@ -194,6 +213,8 @@ function newUserConfirmed() {
     accountBalance = 2000;
 }
 
+// once user is confirmed, they are sent to the main menu
+// in the background all the product information is retrieved from the sql database and stored in an array of objects (productsArray)
 function mainMenu() {
     connection.query("SELECT * FROM bamazon.products;",
         function(err, res) {
@@ -211,8 +232,13 @@ function mainMenu() {
         message: "MAIN MENU:",
         choices: ["CHECK ACCOUNT BALANCE", "VIEW PURCHASE HISTORY", "SHOP", "ADD MONEY TO ACCOUNT"]
     }).then(function(answer) {
+
+        // switch statement allows user to choose what they want, most functionality is through the SHOP option
         console.log(answer.mainmenu);
         switch (answer.mainmenu) {
+               case "CHECK ACCOUNT BALANCE":
+               viewBalance();
+                break;
             case "VIEW PURCHASE HISTORY":
                 console.log("FUNCTION NOT OPERATIONAL; IN PROGRESS");
                 setTimeout(mainMenu, 1500);
@@ -228,8 +254,20 @@ function mainMenu() {
     });
 }
 
+function viewBalance () {
+    var b = accountBalanceArray.length;
+    for (var i = 0; i < b; i++)
+    {
+        if (accountBalanceArray[i].user === currentUser)
+        {
+            console.log("\nHello " + currentUser + " your account balance is: " + accountBalanceArray[i].balance + "\n");
+            setTimeout(mainMenu, 1500);
+        }
+    }
+
+}
 function renderTable() {
-console.log(departmentTotalsArray);
+    console.log(departmentTotalsArray);
 
     // var n = productsArray.length;
 
@@ -270,7 +308,7 @@ console.log(departmentTotalsArray);
         align: "center",
         width: 20
     }];
- 
+
     var rows = [];
     var n = productsArray.length;
     var x = 0;
@@ -328,60 +366,60 @@ function displayShoppingCart() {
         type: "confirm",
         message: "Would you like to continue shopping?"
     }).then(function(answer) {
-            if (answer.shop) {
-                browse();
-            } else {
-                var n = shoppingCartArray.length;
-                for (var i = 0; i < n; i++) {
-                    cost = shoppingCartArray[i].cost;
-                    accountBalance -= cost;
-                    connection.query("INSERT INTO bamazon.transactions SET ?", {
-                        username: currentUser,
-                        purchase: shoppingCartArray[i].product,
-                        quantity: shoppingCartArray[i].quantity,
-                        department: shoppingCartArray[i].department,
-                        purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
-                        cost: shoppingCartArray[i].cost
-                    }, function(err, res) {
-                        if (err) throw err;
-                    });
-                    connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
-                        account_balance: accountBalance,
-                        purchase: shoppingCartArray[i].product,
-                        quantity: shoppingCartArray[i].quantity,
-                        department: shoppingCartArray[i].department,
-                        purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
-                        cost: shoppingCartArray[i].cost
-                    }, function(err, res) {
-                        if (err) throw err;
-                    });
+        if (answer.shop) {
+            browse();
+        } else {
+            var n = shoppingCartArray.length;
+            for (var i = 0; i < n; i++) {
+                cost = shoppingCartArray[i].cost;
+                accountBalance -= cost;
+                connection.query("INSERT INTO bamazon.transactions SET ?", {
+                    username: currentUser,
+                    purchase: shoppingCartArray[i].product,
+                    quantity: shoppingCartArray[i].quantity,
+                    department: shoppingCartArray[i].department,
+                    purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
+                    cost: shoppingCartArray[i].cost
+                }, function(err, res) {
+                    if (err) throw err;
+                });
+                connection.query("INSERT INTO bamazon_user_management." + currentUser + " SET ?", {
+                    account_balance: accountBalance,
+                    purchase: shoppingCartArray[i].product,
+                    quantity: shoppingCartArray[i].quantity,
+                    department: shoppingCartArray[i].department,
+                    purchase_date: moment().format('MMMM Do YYYY, h:mm:ss a'),
+                    cost: shoppingCartArray[i].cost
+                }, function(err, res) {
+                    if (err) throw err;
+                });
 
-                    connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + shoppingCartArray[i].department + "';", function(err, res) {
-                        if (err) throw err;
-                        tempSum = res[0]['SUM(cost)'];
+                connection.query("SELECT SUM(cost) FROM bamazon.transactions WHERE department='" + shoppingCartArray[i].department + "';", function(err, res) {
+                    if (err) throw err;
+                    tempSum = res[0]['SUM(cost)'];
 
-                    });
-                    tempDepartment = shoppingCartArray[i].department;
+                });
+                tempDepartment = shoppingCartArray[i].department;
 
-                    setTimeout(function() { updateDeptCosts(tempDepartment) }, 1000);
-                    totalOrderCost += shoppingCartArray[i].cost;
-                }
-                setTimeout(function() {
+                setTimeout(function() { updateDeptCosts(tempDepartment) }, 1000);
+                totalOrderCost += shoppingCartArray[i].cost;
+            }
+            setTimeout(function() {
                 mainMenu();
                 shoppingCartArray = [];
             }, 1500);
-            }
-            
-        });
-    }
-    
+        }
 
-    function updateDeptCosts(department) {
-        connection.query("UPDATE bamazon.departments SET total_department_sales=" + tempSum + " WHERE department_name='" + department + "';", {
-
-        }, function(err, res) {
-            if (err) throw err;
-        });
+    });
+}
 
 
-    }
+function updateDeptCosts(department) {
+    connection.query("UPDATE bamazon.departments SET total_department_sales=" + tempSum + " WHERE department_name='" + department + "';", {
+
+    }, function(err, res) {
+        if (err) throw err;
+    });
+
+
+}
