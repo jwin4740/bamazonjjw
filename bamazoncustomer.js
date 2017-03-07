@@ -19,6 +19,7 @@ var departmentTotalsArray = [];
 var m = 0;
 var tempSum;
 var accountBalanceArray = [];
+var accountHistoryArray = [];
 
 // creates connection to mysql
 var connection = mysql.createConnection({
@@ -36,6 +37,18 @@ function Product(id, product, price, department, quantity) {
     this.department = department;
     this.quantity = quantity;
 }
+
+// account history constructor for the user
+function History(id, product, price, department, quantity, purchaseDate, balance) {
+    this.id = id;
+    this.product = product;
+    this.price = price;
+    this.department = department;
+    this.quantity = quantity;
+    this.purchaseDate = purchaseDate;
+    this.balance = balance;
+}
+
 
 // constructor function that will hold our shopping cart items
 function CartItem(product, price, quantity, cost, department) {
@@ -191,7 +204,7 @@ function createNewUser() {
 // adds the user credentials to the database and gives them a default balance of $2000
 // logs their account creation data to the database
 function newUserConfirmed() {
-    
+
     connection.query("INSERT INTO bamazon.useraccounts SET ?", {
         username: currentUser,
         password: password,
@@ -228,6 +241,7 @@ function newUserConfirmed() {
 // in the background all the product information is retrieved from the sql database and stored in an array of objects (productsArray)
 function mainMenu() {
     productsArray = [];
+    accountHistoryArray = [];
     connection.query("SELECT * FROM bamazon.products;",
         function(err, res) {
             if (err) throw err;
@@ -251,8 +265,7 @@ function mainMenu() {
                 giveBalance("display");
                 break;
             case "VIEW PURCHASE HISTORY":
-                console.log("FUNCTION NOT OPERATIONAL; IN PROGRESS");
-                setTimeout(mainMenu, 1500);
+                viewPurchaseHistory();
                 break;
             case "SHOP":
                 renderTable();
@@ -265,6 +278,95 @@ function mainMenu() {
     });
 }
 
+function viewPurchaseHistory() {
+
+    connection.query("SELECT * FROM bamazon_user_management." + currentUser + ";",
+        function(err, res) {
+            if (err) throw err;
+            var n = res.length;
+            for (var i = 1; i < n; i++) {
+                var historyObj = new History(res[i].id, res[i].purchase, res[i].cost, res[i].department, res[i].quantity, res[i].purchase_date, res[i].account_balance);
+                accountHistoryArray.push(historyObj);
+
+            }
+            setTimeout(renderHistoryTable, 500);
+        });
+    // id, product, price, department, quantity, purchaseDate, balance
+    function renderHistoryTable() {
+        var header = [{
+            value: "PRODUCT",
+            headerColor: "cyan",
+            color: "green",
+            align: "center",
+            paddingLeft: 2,
+            width: 35
+
+        }, {
+            value: "COST",
+            headerColor: "cyan",
+            color: "green",
+            align: "center",
+            width: 15,
+            formatter: function(value) {
+                var str = "$" + value.toFixed(2);
+                return str;
+            }
+        }, {
+            value: "QUANTITY",
+            headerColor: "cyan",
+            color: "green",
+            align: "center",
+            width: 10
+        }, {
+            value: "DEPARTMENT",
+            headerColor: "cyan",
+            color: "yellow",
+            align: "center",
+            width: 18
+        }, {
+            value: "PURCHASE DATE",
+            headerColor: "cyan",
+            color: "green",
+            align: "center",
+            width: 20
+        }, {
+            value: "ACCOUNT BALANCE",
+            headerColor: "cyan",
+            color: "green",
+            align: "center",
+            width: 15,
+            formatter: function(value) {
+                var str2 = "$" + value.toFixed(2);
+                return str2;
+            }
+        }];
+
+        var rows = [];
+        var n = accountHistoryArray.length;
+        var x = 0;
+        // the row input is pulled sequentially from the array using a do while loop
+        do {
+            rows.push([accountHistoryArray[x].product, accountHistoryArray[x].price, accountHistoryArray[x].quantity, accountHistoryArray[x].department, accountHistoryArray[x].purchaseDate, accountHistoryArray[x].balance]);
+            x++;
+        }
+        while (x < n);
+
+        var t1 = Table(header, rows, {
+            borderStyle: 1,
+            borderColor: "blue",
+            paddingBottom: 0,
+            headerAlign: "center",
+            align: "center",
+            color: "white"
+        });
+
+        str1 = t1.render(); // table is rendered
+        console.log(str1 + "\n\n");
+        setTimeout(mainMenu, 1500);
+
+
+    }
+}
 // function that is called initially for a returning user than it is called anytime user requests to see their balance
 function giveBalance(input) {
     var b = accountBalanceArray.length;
@@ -441,12 +543,9 @@ function displayShoppingCart() {
                         updateDeptCosts(tempSum, tempDepartment);
                     }
                 }
-
-
                 totalOrderCost += cost; // stores the users current shopping cart total
-
-
             }
+
             console.log("\n Your total order cost is: " + totalOrderCost + "!!!! It has been successfully processed\n");
 
             // returns to main menu and empties variable values
@@ -464,7 +563,6 @@ function displayShoppingCart() {
 
 // updates the total department sales
 function updateDeptCosts(value, department) {
-    console.log(value);
     connection.query("UPDATE bamazon.departments SET total_department_sales=" + value + " WHERE department_name='" + department + "';", function(err, res) {
         if (err) throw err;
     });

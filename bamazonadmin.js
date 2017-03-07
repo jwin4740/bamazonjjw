@@ -54,10 +54,9 @@ function DepartmentTotal(bamdepartment, bamtotal) {
 }
 
 
+
 getSums();
-
 function getSums() {
-
     connection.query("SELECT * FROM bamazon.departments;",
         function(err, res) {
             if (err) throw err;
@@ -66,11 +65,11 @@ function getSums() {
                 var depTotalObj = new DepartmentTotal(res[i].department_name, res[i].total_department_sales);
                 departmentTotalsArray.push(depTotalObj);
                 departmentArray.push(res[i].department_name);
-
             }
         });
-
 }
+
+
 var start = function() {
     inquirer.prompt({
         name: "usertype",
